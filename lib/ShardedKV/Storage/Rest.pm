@@ -2,6 +2,7 @@ package ShardedKV::Storage::Rest;
 
 use Moose;
 use Net::HTTP;
+use URI;
 
 our $VERSION = 0.1;
 
@@ -17,18 +18,17 @@ has 'basepath' => (
     is => 'ro',
     isa => 'Str',
     required => 0,
-    default => '',
-    trigger => sub { 
-        $_[1]
-    }
+    default => sub { my $self = shift;
+                     my $uri = URI->new($self->url);
+                     return $uri->path },
 );
 
 sub _http {
     my $self = shift;
     my $s = $self->{_s};
     return $s if ($s && $s->connected);
-    my ($host, $port) = split(':', $self->url);
-    $self->{_s} = Net::HTTP->new(Host => $host, PeerPort => $port, KeepAlive => 1);
+    my $uri = URI->new($self->url);
+    $self->{_s} = Net::HTTP->new(Host => $uri->host, PeerPort => $uri->port, KeepAlive => 1);
     return $self->{_s};
 }
 
@@ -39,7 +39,8 @@ sub get {
 
     return unless $s;
 
-    $s->write_request(GET => "/$key", 'User-Agent' => "p5-ShardedKV");
+    my $uri = URI->new($self->url);
+    $s->write_request(GET => $uri->path . "/$key", 'User-Agent' => "p5-ShardedKV");
     my($code, $mess, %h) = $s->read_response_headers;
     my $value;
     if ($code >= 200 && $code < 300) {
@@ -60,7 +61,8 @@ sub set {
 
     return 0 unless $s;
 
-    $s->write_request(PUT => "/$key", 'User-Agent' => "p5-ShardedKV", $value_ref);
+    my $uri = URI->new($self->url);
+    $s->write_request(PUT => $uri->path . "/$key", 'User-Agent' => "p5-ShardedKV", $value_ref);
     my($code, $mess, %h) = $s->read_response_headers;
     if ($code >= 200 && $code < 300) {
         return 1;
@@ -75,7 +77,8 @@ sub delete {
 
     return 0 unless $s;
     
-    $s->write_request(DELETE => "/$key", 'User-Agent' => "p5-ShardedKV");
+    my $uri = URI->new($self->url);
+    $s->write_request(DELETE => $uri->path . "/$key", 'User-Agent' => "p5-ShardedKV");
     my($code, $mess, %h) = $s->read_response_headers;
     if ($code >= 200 && $code < 300) {
         return 1;
@@ -101,13 +104,40 @@ ShardedKV::Storage::Rest - rest backend for ShardedKV
 
 =head1 SYNOPSIS
 
-  TODO
+  use ShardedKV;
+  use ShardedKV::Storage::Rest;
+  ... create ShardedKV...
+  my $storage = ShardedKV::Storage::Rest->new(
+    url => 'http://localhost:679',
+  );
+  ... put storage into ShardedKV...
+  
+  # values are scalar references to strings
+  $skv->set("foo", 'bar');
+  my $value_ref = $skv->get("foo");
+
 
 =head1 DESCRIPTION
 
 A C<ShardedKV> storage backend that uses a remote http/rest storage.
 
 Implements the C<ShardedKV::Storage> role.
+
+=head1 PUBLIC ATTRIBUTES
+
+=over 4
+
+=head2 url
+
+A 'http://hostname:port[/basepath]' url string pointing at the http/rest server for this shard.
+Required.
+
+=head2 basepath
+
+The base path part of the url provided at initialization time
+Read Only
+
+=back
 
 =head1 SEE ALSO
 
@@ -118,7 +148,7 @@ L<ShardedKV::Storage>
 
 =over 4
 
-=item * Andrea Guzzo <xant@cpan.org>
+=item Andrea Guzzo <xant@cpan.org>
 
 =back
 

@@ -8,22 +8,28 @@ use ShardedKV::Continuum::Ketama;
 
 BEGIN { use_ok( 'ShardedKV::Storage::Rest' ); }
 
-my $continuum_spec = [
-    ["shard1", 100], # shard name, weight
-    ["shard2", 150],
-];
+my @test_urls = split(';', $ENV{TEST_URLS});
+unless(@test_urls) {
+    warn "no TEST_URLS environment variable set, skipping tests";
+    done_testing();
+    exit(0);
+}
+
+
+
+my $continuum_spec;
+foreach my $i (1..@test_urls) {
+    push(@$continuum_spec, ["shard$i", 100]);
+}
 my $continuum = ShardedKV::Continuum::Ketama->new(from => $continuum_spec);
 
 # Redis storage chosen here, but can also be "Memory" or "MySQL".
 # "Memory" is for testing. Mixing storages likely has weird side effects.
-my %storages = (
-    shard1 => ShardedKV::Storage::Rest->new(
-        url => 'localhost:6379',
-    ),
-    shard2 => ShardedKV::Storage::Rest->new(
-        url => 'localhost:6380',
-    ),
-);
+my %storages;
+my $cnt = 0;
+foreach my $test_url (@test_urls) {
+    $storages{"shard".++$cnt} = ShardedKV::Storage::Rest->new(url => $test_url);
+}
 
 my $skv = ShardedKV->new(
     storages => \%storages,
