@@ -1,0 +1,9 @@
+./README.md
+./Changes
+./lib
+./lib/ShardedKV
+./lib/ShardedKV/Storage
+./lib/ShardedKV/Storage/Rest.pm
+./Makefile.PL
+./t
+./t/rest.t
