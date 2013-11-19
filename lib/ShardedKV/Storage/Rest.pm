@@ -1,10 +1,11 @@
 package ShardedKV::Storage::Rest;
 
+use strict;
 use Moose;
 use Net::HTTP;
 use URI;
 
-our $VERSION = 0.1;
+our $VERSION = '0.2';
 
 with 'ShardedKV::Storage';
 

@@ -7,6 +7,7 @@ WriteMakefile(
       'Test::More' => 0,
       'ShardedKV'  => 0,
       'URI'        => 0,
+      'Net::HTTP'  => 0,
     },
     ABSTRACT_FROM  => 'lib/ShardedKV/Storage/Rest.pm',
     AUTHOR         => [
