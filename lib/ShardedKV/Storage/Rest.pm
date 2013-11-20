@@ -4,6 +4,7 @@ use strict;
 use Moose;
 use Net::HTTP;
 use URI;
+use SOCKET;
 
 our $VERSION = '0.2';
 
@@ -27,29 +28,65 @@ has 'basepath' => (
 sub _http {
     my $self = shift;
     my $s = $self->{_s};
-    return $s if ($s && $s->connected);
+    if ($s && $s->connected) {
+        my $buff;
+        eval {
+            my $ret = recv($s, $buff, 1, MSG_PEEK | MSG_DONTWAIT);
+            return $s
+                if defined($ret);
+        }
+    }
     my $uri = URI->new($self->url);
     $self->{_s} = Net::HTTP->new(Host => $uri->host, PeerPort => $uri->port, KeepAlive => 1);
     return $self->{_s};
 }
 
-sub get {
-    my ($self, $key) = @_;
+sub _send_http_request {
+    my ($self, $type, $key, $body) = @_;
 
     my $s = $self->_http;
 
     return unless $s;
 
     my $uri = URI->new($self->url);
-    $s->write_request(GET => $uri->path . "/$key", 'User-Agent' => "p5-ShardedKV");
-    my($code, $mess, %h) = $s->read_response_headers;
+
+    my ($code, $mess, %h);
+    eval {
+        $s->write_request($type => $uri->path . "/$key", 'User-Agent' => "p5-ShardedKV", $body);
+        ($code, $mess, %h) = $s->read_response_headers;
+        1;
+    } or do {
+        warn $@;
+        return;
+    };
+    return ($s, $code, $mess, %h); 
+}
+
+sub get {
+    my ($self, $key) = @_;
+
+    my ($s, $code, $mess, %h) = $self->_send_http_request('GET', $key);
+    return unless defined $code;
+
     my $value;
     if ($code >= 200 && $code < 300) {
-        while (1) {
+        my $content_length = $h{'Content-Length'};
+        my $to_read = $content_length;
+        return unless $to_read;
+        my $len = 0;
+        while ($len != $to_read) {
             my $buf;
-            my $n = $s->read_entity_body($buf, 1024);
-            last unless $n;
-            $value .= $buf;
+            my $n;
+            eval { 
+                $n = $s->read_entity_body($buf, $to_read);
+            } or do {
+                last;
+            };
+            if ($n > 0) {
+                $len += $n;
+                $to_read -= $n;
+                $value .= $buf;
+            }
         }
     }
     return $value;
@@ -58,13 +95,9 @@ sub get {
 sub set {
     my ($self, $key, $value_ref) = @_;
 
-    my $s = $self->_http;
+    my ($s, $code, $mess, %h) = $self->_send_http_request('PUT', $key, $value_ref);
+    return unless defined $code;
 
-    return 0 unless $s;
-
-    my $uri = URI->new($self->url);
-    $s->write_request(PUT => $uri->path . "/$key", 'User-Agent' => "p5-ShardedKV", $value_ref);
-    my($code, $mess, %h) = $s->read_response_headers;
     if ($code >= 200 && $code < 300) {
         return 1;
     }
@@ -74,13 +107,9 @@ sub set {
 sub delete {
     my ($self, $key) = @_;
 
-    my $s = $self->_http;
+    my ($s, $code, $mess, %h) = $self->_send_http_request('DELETE', $key);
+    return unless defined $code;
 
-    return 0 unless $s;
-    
-    my $uri = URI->new($self->url);
-    $s->write_request(DELETE => $uri->path . "/$key", 'User-Agent' => "p5-ShardedKV");
-    my($code, $mess, %h) = $s->read_response_headers;
     if ($code >= 200 && $code < 300) {
         return 1;
     }
