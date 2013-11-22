@@ -10,7 +10,7 @@ WriteMakefile(
       'ShardedKV'  => 0,
       'URI'        => 0,
       'Net::HTTP'  => 0,
-      'SOCKET'     => 0,
+      'Socket'     => 0,
     },
     ABSTRACT_FROM  => 'lib/ShardedKV/Storage/Rest.pm',
     AUTHOR         => [

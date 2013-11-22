@@ -4,7 +4,7 @@ use strict;
 use Moose;
 use Net::HTTP;
 use URI;
-use SOCKET;
+use Socket;
 
 our $VERSION = '0.2';
 
