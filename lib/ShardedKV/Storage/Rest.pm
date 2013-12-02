@@ -6,7 +6,7 @@ use Net::HTTP;
 use URI;
 use Socket;
 
-our $VERSION = '0.2';
+our $VERSION = '0.3';
 
 with 'ShardedKV::Storage';
 
