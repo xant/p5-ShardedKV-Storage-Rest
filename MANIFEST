@@ -1,5 +1,6 @@
 Changes
 lib/ShardedKV/Storage/Rest.pm
+lib/ShardedKV/Storage/ReplicatedRest.pm
 Makefile.PL
 MANIFEST
 README.md
