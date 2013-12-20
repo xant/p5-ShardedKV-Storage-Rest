@@ -2,7 +2,7 @@ package ShardedKV::Storage::Rest;
 
 use strict;
 use Moose;
-use Net::HTTP;
+use Hijk;
 use URI;
 use Socket;
 
@@ -25,71 +25,45 @@ has 'basepath' => (
                      return $uri->path },
 );
 
-sub _http {
-    my $self = shift;
-    my $s = $self->{_s};
-    if ($s && $s->connected) {
-        my $buff;
-        eval {
-            my $ret = recv($s, $buff, 1, MSG_PEEK | MSG_DONTWAIT);
-            return $s
-                if defined($ret);
-        }
-    }
-    my $uri = URI->new($self->url);
-    $self->{_s} = Net::HTTP->new(Host => $uri->host, PeerPort => $uri->port, KeepAlive => 1);
-    return $self->{_s};
-}
-
 sub _send_http_request {
     my ($self, $type, $key, $body) = @_;
 
-    my $s = $self->_http;
+    my $uri = URI->new($self->url . "/" . $key);
 
-    return unless $s;
+    my $response;
 
-    my $uri = URI->new($self->url);
-
-    my ($code, $mess, %h);
     eval {
-        $s->write_request($type => $uri->path . "/$key", 'User-Agent' => "p5-ShardedKV", $body ? $body : "");
-        ($code, $mess, %h) = $s->read_response_headers;
+        $response = Hijk::request({
+            socket_cache => {}, # don't cache connections
+            method => $type,
+            port => $uri->port,
+            path => $uri->path,
+            host => $uri->host,
+            $body ? (
+                head => [ "Content-Type" => "application/octet-stream" ],
+                body => $body)
+            : (),
+        });
         1;
     } or do {
         warn $@;
         return;
     };
-    return ($s, $code, $mess, %h); 
+    return $response;
 }
 
 sub get {
     my ($self, $key) = @_;
 
-    my ($s, $code, $mess, %h) = $self->_send_http_request('GET', $key);
+    my $response = $self->_send_http_request('GET', $key);
+    my $code = $response->{status};
     return unless defined $code;
 
-    my $value;
     if ($code >= 200 && $code < 300) {
-        my $content_length = $h{'Content-Length'};
-        my $to_read = $content_length;
-        return unless $to_read;
-        my $len = 0;
-        while ($len != $to_read) {
-            my $buf;
-            my $n;
-            eval { 
-                $n = $s->read_entity_body($buf, $to_read);
-            } or do {
-                last;
-            };
-            if ($n > 0) {
-                $len += $n;
-                $to_read -= $n;
-                $value .= $buf;
-            }
-        }
+        return $response->{body};
     }
-    return $value;
+
+    return undef;
 }
 
 sub set {
@@ -97,7 +71,8 @@ sub set {
 
     return unless $value_ref;
 
-    my ($s, $code, $mess, %h) = $self->_send_http_request('PUT', $key, $value_ref);
+    my $response = $self->_send_http_request('PUT', $key, $value_ref);
+    my $code = $response->{status};
     return unless defined $code;
 
     if ($code >= 200 && $code < 300) {
@@ -109,8 +84,9 @@ sub set {
 sub delete {
     my ($self, $key) = @_;
 
-    my ($s, $code, $mess, %h) = $self->_send_http_request('DELETE', $key);
-    return unless defined $code;
+    my $response = $self->_send_http_request('DELETE', $key);
+    my $code = $response->{status};
+     return unless defined $code;
 
     if ($code >= 200 && $code < 300) {
         return 1;
@@ -119,9 +95,7 @@ sub delete {
 }
 
 sub reset_connection {
-    my $self = shift;
-    delete $self->{_s};
-    $self->_http; # force creation of a new connection
+    # noop -- hijk doesn't cache connections
 }
 
 no Moose;
