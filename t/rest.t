@@ -55,6 +55,8 @@ sub Test::HTTP::Server::Request::test
         if (defined $out) {
             $self->{out_headers}->{'Content-Length'} = length($out);
             return $out;
+        } else {
+            $self->{out_code} = '404 Not Found';
         }
     } elsif ($self->{request}->[0] eq 'DELETE') {
         $self->{out_headers}->{'Content-Length'} = 0;
