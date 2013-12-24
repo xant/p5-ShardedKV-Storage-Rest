@@ -1,3 +1,6 @@
+0.4 Tue Dec 24 12:55:01 CET 2013
+  - switched from Net::HTTP to Hijk
+  - some minor cleanings and fixes
 0.3 Tue Dec  3 00:22:07 CET 2013
   - support for replicated backend
   - fixed to avoid warnings on more recent perls
