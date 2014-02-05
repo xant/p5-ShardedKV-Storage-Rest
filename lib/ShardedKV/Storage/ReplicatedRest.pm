@@ -19,17 +19,24 @@ has 'endpoints' => (
     is => 'ro',
     isa => 'ArrayRef[ShardedKV::Storage::Rest]',
     required => 0,
-    default => sub { my $self = shift;
-                     push @{$self->{endpoints}}, ShardedKV::Storage::Rest->new(url => $_) for @{$self->urls};
-                     return $self->{endpoints}; },
+    lazy    => 1,
+    builder => '_build_endpoints'
 );
 
 has 'max_failures' => (
     is => 'ro',
     isa => 'Int',
     required => 0,
-    default => 0,
+    default => 0
 );
+
+
+sub _build_endpoints {
+    my $self = shift;
+    $self->{endpoints} = [];
+    push @{$self->{endpoints}}, ShardedKV::Storage::Rest->new(url => $_) for @{$self->urls};
+    return $self->{endpoints};
+}
 
 sub get {
     my ($self, $key) = @_;
