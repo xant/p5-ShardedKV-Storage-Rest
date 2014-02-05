@@ -1,3 +1,6 @@
+0.5 Wed Feb  5 14:53:51 CET 2014
+  - fixed a bug showing on perl 5.18 and due to the way
+    moose initializes the declared properties at construction time
 0.4 Tue Dec 24 12:55:01 CET 2013
   - switched from Net::HTTP to Hijk
   - some minor cleanings and fixes
