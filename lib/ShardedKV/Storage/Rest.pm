@@ -25,6 +25,20 @@ has 'basepath' => (
                      return $uri->path },
 );
 
+has 'connect_timeout' => (
+    is => 'ro',
+    isa => 'Num',
+    required => 0,
+    default => 2, # seconds
+);
+
+has 'read_timeout' => (
+    is => 'ro',
+    isa => 'Num',
+    required => 0,
+    default => 1, # seconds
+);
+
 sub _send_http_request {
     my ($self, $type, $key, $body) = @_;
 
@@ -39,6 +53,8 @@ sub _send_http_request {
             port => $uri->port,
             path => $uri->path,
             host => $uri->host,
+            read_timeout => $self->read_timeout,
+            connect_timeout => $self->connect_timeout,
             $body ? (
                 head => [ "Content-Type" => "application/octet-stream" ],
                 body => $body)
