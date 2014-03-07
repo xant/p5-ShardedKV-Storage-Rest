@@ -1,3 +1,5 @@
+0.6 Fri Mar  7 10:47:13 CET 2014
+  - Added read and connect timeouts
 0.5 Wed Feb  5 14:53:51 CET 2014
   - fixed a bug showing on perl 5.18 and due to the way
     moose initializes the declared properties at construction time
