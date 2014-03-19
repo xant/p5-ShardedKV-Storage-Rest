@@ -42,8 +42,9 @@ sub _maybe_use_endpoint {
 
     my $state = $self->{endpoint_states}->{$endpoint};
 
-    if (!defined($state) || !defined($state->{state})) {
+    if (!defined($state) || !$state->{state}) {
         $state->{state} = 'ok';
+        $self->{endpoint_states}->{$endpoint} = $state;
         return $endpoint;
     }
 
