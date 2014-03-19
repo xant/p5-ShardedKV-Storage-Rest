@@ -111,18 +111,25 @@ sub get {
     for my $endpoint (@{$self->endpoints}) {
         next unless $self->_maybe_use_endpoint($endpoint);
         my $data;
+        my $caught_exception;
         eval {
             $data = $endpoint->get($key);
             1;
         } or do {
             my $err = $@ || "zombie error";
+            $caught_exception = 1;
             warn "caught exception during get($key): $err";
         };
-        if (defined($data)) {
+
+        if ($caught_exception) {
+            $self->_mark_endpoint_as_failed($endpoint);
+        } else {
             $self->_mark_endpoint_as_success($endpoint);
+        }
+
+        if (defined($data)) {
             return $data;
         }
-        $self->_mark_endpoint_as_failed($endpoint);
     }
 
     return undef;
@@ -139,18 +146,24 @@ sub set {
             next;
         }
         my $r;
+        my $caught_exception;
         eval {
             $r = $endpoint->set($key, $value);
             1;
         } or do {
             # warn -- error setting key=$key
+            $caught_exception = 1;
             $r = 0;
         };
-        if (!$r) {
+
+        if ($caught_exception) {
             $self->_mark_endpoint_as_failed($endpoint);
-            $failures++;
         } else {
             $self->_mark_endpoint_as_success($endpoint);
+        }
+
+        if (!$r) {
+            $failures++;
         }
     }
 
@@ -169,18 +182,24 @@ sub delete {
             next;
         }
         my $r;
+        my $caught_exception;
         eval {
             $r = $endpoint->delete($key);
             1;
         } or do {
             # warn -- error deleting key=$key
+            $caught_exception = 1;
             $r = 0;
         };
-        if (!$r) {
+
+        if ($caught_exception) {
             $self->_mark_endpoint_as_failed($endpoint);
-            $failures++;
         } else {
             $self->_mark_endpoint_as_success($endpoint);
+        }
+
+        if (!$r) {
+            $failures++;
         }
     }
 
@@ -198,18 +217,24 @@ sub reset_connection {
             next;
         }
         my $r;
+        my $caught_exception;
         eval {
             $r = $endpoint->reset_connection($key);
             1;
         } or do {
             $r = 0;
+            $caught_exception = 1;
             # warn -- error resetting connection for key=$key
         };
-        if (!$r) {
+
+        if ($caught_exception) {
             $self->_mark_endpoint_as_failed($endpoint);
-            $failures++;
         } else {
             $self->_mark_endpoint_as_success($endpoint);
+        }
+
+        if (!$r) {
+            $failures++;
         }
     }
     return ($failures > $self->max_failures) ? 0 : 1;
