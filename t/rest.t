@@ -109,4 +109,17 @@ foreach my $i (0..$num_items) {
     is($skv->get("${key}$i"), undef);
 }
 
+$storages{"shard1"} = ShardedKV::Storage::ReplicatedRest->new(urls => [ $test_urls[0], "http://localhost:1" ], max_failures => 1);
+
+foreach my $i (0..$num_items) {
+    is ($skv->set("${key}$i", "${value}$i"), 1);
+}
+foreach my $i (0..$num_items) {
+    my $stored_value = $skv->get("${key}$i");
+    is($stored_value, "${value}$i");
+    $skv->delete("${key}$i");
+    is($skv->get("${key}$i"), undef);
+}
+
+
 done_testing();
