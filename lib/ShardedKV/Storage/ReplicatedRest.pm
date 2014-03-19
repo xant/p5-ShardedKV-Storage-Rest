@@ -42,6 +42,11 @@ sub _maybe_use_endpoint {
 
     my $state = $self->{endpoint_states}->{$endpoint};
 
+    if (!defined($state) || !defined($state->{state})) {
+        $state->{state} = 'ok';
+        return $endpoint;
+    }
+
     if ($state->{state} eq 'ok' || $state->{state} eq 'warn') {
         return $endpoint;
     }
