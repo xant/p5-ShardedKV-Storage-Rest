@@ -6,7 +6,7 @@ use Hijk;
 use URI;
 use Socket;
 
-our $VERSION = '0.7';
+our $VERSION = '0.8';
 
 with 'ShardedKV::Storage';
 
