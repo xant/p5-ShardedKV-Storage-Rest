@@ -30,6 +30,13 @@ has 'max_failures' => (
     default => 0
 );
 
+has 'use_backoff' => (
+    is => 'ro',
+    isa => 'Int',
+    required => 0,
+    default => 1
+);
+
 sub _build_endpoints {
     my $self = shift;
     $self->{endpoints} = [];
@@ -39,6 +46,11 @@ sub _build_endpoints {
 
 sub _maybe_use_endpoint {
     my ($self, $endpoint) = @_;
+
+    if (!$self->{use_backoff}) {
+        # don't use backoff -- every endpoint is good to use
+        return 1;
+    }
 
     my $state = $self->{endpoint_states}->{$endpoint};
 
@@ -73,6 +85,10 @@ sub _maybe_use_endpoint {
 sub _mark_endpoint_as_failed {
     my ($self, $endpoint) = @_;
 
+    if (!$self->{use_backoff}) {
+        return
+    }
+
     my $state = $self->{endpoint_states}->{$endpoint};
 
     if ($state->{state} eq 'ok') {
@@ -102,6 +118,7 @@ sub _mark_endpoint_as_failed {
 
 sub _mark_endpoint_as_success {
     my ($self, $endpoint) = @_;
+    # harmless if we're ignoring backoff logic
     $self->{endpoint_states}->{$endpoint}->{state} = 'ok';
 }
 
