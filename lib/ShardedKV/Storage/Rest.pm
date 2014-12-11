@@ -71,6 +71,8 @@ sub _send_http_request {
 sub get {
     my ($self, $key) = @_;
 
+    return unless defined $key;
+
     my $response = $self->_send_http_request('GET', $key);
     my $code = $response->{status};
     return unless defined $code;
@@ -85,6 +87,7 @@ sub get {
 sub set {
     my ($self, $key, $value_ref) = @_;
 
+    return unless defined $key;
     return unless $value_ref;
 
     my $response = $self->_send_http_request('PUT', $key, $value_ref);
@@ -99,6 +102,8 @@ sub set {
 
 sub delete {
     my ($self, $key) = @_;
+
+    return unless defined $key;
 
     my $response = $self->_send_http_request('DELETE', $key);
     my $code = $response->{status};
