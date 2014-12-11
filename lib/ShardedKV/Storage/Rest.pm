@@ -6,37 +6,39 @@ use Hijk;
 use URI;
 use Socket;
 
-our $VERSION = '0.8';
+our $VERSION = '0.9';
 
 with 'ShardedKV::Storage';
 
 has 'url' => (
-    is => 'ro',
-    isa => 'Str',
+    is       => 'ro',
+    isa      => 'Str',
     required => 1
 );
 
 has 'basepath' => (
-    is => 'ro',
-    isa => 'Str',
+    is       => 'ro',
+    isa      => 'Str',
     required => 0,
-    default => sub { my $self = shift;
-                     my $uri = URI->new($self->url);
-                     return $uri->path },
+    default  => sub {
+        my $self = shift;
+        my $uri  = URI->new( $self->url );
+        return $uri->path;
+    },
 );
 
 has 'connect_timeout' => (
-    is => 'ro',
-    isa => 'Num',
+    is       => 'ro',
+    isa      => 'Num',
     required => 0,
-    default => 2, # seconds
+    default  => 2,       # seconds
 );
 
 has 'read_timeout' => (
-    is => 'ro',
-    isa => 'Num',
+    is       => 'ro',
+    isa      => 'Num',
     required => 0,
-    default => 1, # seconds
+    default  => 1,       # seconds
 );
 
 sub _send_http_request {

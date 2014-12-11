@@ -10,31 +10,31 @@ use Moose;
 with 'ShardedKV::Storage';
 
 has 'urls' => (
-    is => 'ro',
-    isa => 'ArrayRef[Str]',
+    is       => 'ro',
+    isa      => 'ArrayRef[Str]',
     required => 1
 );
 
 has 'endpoints' => (
-    is => 'ro',
-    isa => 'ArrayRef[ShardedKV::Storage::Rest]',
+    is       => 'ro',
+    isa      => 'ArrayRef[ShardedKV::Storage::Rest]',
     required => 0,
-    lazy    => 1,
-    builder => '_build_endpoints'
+    lazy     => 1,
+    builder  => '_build_endpoints'
 );
 
 has 'max_failures' => (
-    is => 'ro',
-    isa => 'Int',
+    is       => 'ro',
+    isa      => 'Int',
     required => 0,
-    default => 0
+    default  => 0
 );
 
 has 'use_backoff' => (
-    is => 'ro',
-    isa => 'Int',
+    is       => 'ro',
+    isa      => 'Int',
     required => 0,
-    default => 1
+    default  => 1
 );
 
 sub _build_endpoints {
