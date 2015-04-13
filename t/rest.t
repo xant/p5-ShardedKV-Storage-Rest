@@ -60,6 +60,9 @@ sub Test::HTTP::Server::Request::test
         }
     } elsif ($self->{request}->[0] eq 'DELETE') {
         $self->{out_headers}->{'Content-Length'} = 0;
+        if ($path =~ m@\A /test/DELETE-(\d{3}) \z@x) {
+            $self->{out_code} = "$1 ($1 Response)";
+        }
         unlink "$tempdir/$key.$me";
     }
     return "";
@@ -121,5 +124,17 @@ foreach my $i (0..$num_items) {
     is($skv->get("${key}$i"), undef);
 }
 
+# Multiple delete ok
+is($skv->delete("${key}0"), 1);
+is($skv->delete("${key}0"), 1);
+
+# Delete successes
+is($skv->delete("DELETE-200"), 1);
+is($skv->delete("DELETE-204"), 1);
+is($skv->delete("DELETE-404"), 1);
+
+# Delete failures
+is($skv->delete("DELETE-403"), 0);
+is($skv->delete("DELETE-500"), 0);
 
 done_testing();

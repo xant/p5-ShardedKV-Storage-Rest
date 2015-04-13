@@ -114,6 +114,9 @@ sub delete {
     if ($code >= 200 && $code < 300) {
         return 1;
     }
+    if ($code == 404) {
+        return 1; # already gone
+    }
     return 0;
 }
 
