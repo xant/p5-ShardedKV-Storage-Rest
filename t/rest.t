@@ -131,6 +131,7 @@ is($skv->delete("${key}0"), 1);
 # Delete successes
 is($skv->delete("DELETE-200"), 1);
 is($skv->delete("DELETE-204"), 1);
+is($skv->delete("DELETE-404"), 1);
 
 # Delete failures
 is($skv->delete("DELETE-403"), 0);
