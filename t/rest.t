@@ -121,5 +121,8 @@ foreach my $i (0..$num_items) {
     is($skv->get("${key}$i"), undef);
 }
 
+# Multiple delete ok
+is($skv->delete("${key}0"), 1);
+is($skv->delete("${key}0"), 1);
 
 done_testing();
